@@ -1,21 +1,36 @@
-const express = require('express');
-const app = express();
-const http = require('http');
-const server = http.createServer(app);
+const express = require("express");
+const http = require("http");
+const socketIO = require("socket.io");
 
-const { Server } = require("socket.io");
-const io = new Server(server);
+const port = 8000;
+const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.send('<h1>Socket IO</h1>');
 });
 
-io.on('connection', (socket) => {
-    socket.on('chat message', (msg) => {
-        console.log('message: ' + msg);
-    });
-})
+let interval;
 
-server.listen(3000, () => {
-    console.log('listening on *:3000');
+io.on("connection", (socket) => {
+  console.log("New client connected");
+  if (interval) {
+    clearInterval(interval);
+  }
+  interval = setInterval(() => getApiAndEmit(socket), 1000);
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+    clearInterval(interval);
+  });
+});
+
+const getApiAndEmit = socket => {
+  const response = new Date();
+  // Emitting a new message. Will be consumed by the client
+  socket.emit("FromAPI", response);
+};
+
+server.listen(port, () => {
+    console.log(`Listening on port ${port}`);
 });
